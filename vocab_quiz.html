@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>영단어 시험</title>
+<style>
+    body { 
+        font-family: Arial, sans-serif; 
+        padding: 20px; 
+        max-width: 600px; 
+        margin: auto; 
+        text-align: center;
+    }
+    h1, h2 { color: #333; }
+    input, button { padding: 10px; font-size: 16px; margin: 5px; }
+    button { cursor: pointer; border: none; background-color: #007bff; color: white; border-radius: 4px; }
+    button:hover { background-color: #0056b3; }
+    table { border-collapse: collapse; margin: 20px auto; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; font-size: 16px; }
+    #quizStatus { font-size: 20px; margin-bottom: 10px; }
+    #quizWord { font-size: 28px; margin: 15px 0; font-weight: bold; }
+    #feedback { font-size: 20px; transition: transform 0.3s ease; }
+    .correct { color: green; transform: scale(1.1); }
+    .wrong { color: red; transform: scale(1.1); }
+    #score { font-size: 22px; font-weight: bold; margin-bottom: 10px; }
+    #wrongList td { padding: 8px; }
+    #wrongList tr:nth-child(even) { background-color: #f9f9f9; }
+</style>
+</head>
+<body>
+
+<h1>영단어 입력</h1>
+
+<input type="text" id="word" placeholder="영단어" />
+<input type="text" id="meaning" placeholder="뜻" />
+<button onclick="addWord()">추가</button>
+<button onclick="startQuiz()" id="startQuizBtn">시험 시작</button>
+
+<table id="wordList">
+    <tr><th>영단어</th><th>뜻</th></tr>
+</table>
+
+<div id="quizSection" style="display:none;">
+    <h2>시험</h2>
+    <div id="quizStatus"></div>
+    <div id="quizWord"></div>
+    <input type="text" id="answerInput" placeholder="뜻을 입력하세요" />
+    <button onclick="submitAnswer()">제출</button>
+    <div id="feedback" style="margin-top:10px; font-weight:bold;"></div>
+</div>
+
+<div id="result" style="display:none;">
+    <h2>시험 결과</h2>
+    <div id="score"></div>
+    <table id="wrongList">
+        <tr><th>영단어</th><th>정답</th><th>입력한 답</th></tr>
+    </table>
+    <button onclick="restart()">다시 시험 보기</button>
+</div>
+
+<script>
+let words = [];
+let quizWords = [];
+let currentIndex = 0;
+let correctCount = 0;
+let wrongAnswers = [];
+
+// 단어 추가
+function addWord() {
+    const wordInput = document.getElementById('word');
+    const meaningInput = document.getElementById('meaning');
+    const word = wordInput.value.trim();
+    const meaning = meaningInput.value.trim();
+
+    if(word && meaning) {
+        words.push({word, meaning});
+        renderTable();
+        wordInput.value = '';
+        meaningInput.value = '';
+    } else {
+        alert("영단어와 뜻을 모두 입력하세요!");
+    }
+}
+
+// 단어 목록 표시
+function renderTable() {
+    const table = document.getElementById('wordList');
+    table.innerHTML = '<tr><th>영단어</th><th>뜻</th></tr>';
+    words.forEach(item => {
+        table.innerHTML += `<tr><td>${item.word}</td><td>${item.meaning}</td></tr>`;
+    });
+}
+
+// 시험 시작
+function startQuiz() {
+    if (words.length === 0) {
+        alert("단어를 먼저 입력하세요!");
+        return;
+    }
+    // 단어 순서 랜덤 섞기
+    quizWords = [...words].sort(() => Math.random() - 0.5);
+    currentIndex = 0;
+    correctCount = 0;
+    wrongAnswers = [];
+
+    // 입력창과 목록 숨기기
+    document.querySelector('h1').style.display = 'none';
+    document.getElementById('word').style.display = 'none';
+    document.getElementById('meaning').style.display = 'none';
+    document.getElementById('startQuizBtn').style.display = 'none';
+    document.getElementById('wordList').style.display = 'none';
+    document.querySelector('button[onclick="addWord()"]').style.display = 'none';
+
+    document.getElementById('quizSection').style.display = 'block';
+    document.getElementById('result').style.display = 'none';
+    renderQuiz();
+}
+
+// 시험 문제 출력
+function renderQuiz() {
+    document.getElementById('quizStatus').textContent = `문제 ${currentIndex + 1} / ${quizWords.length}`;
+    document.getElementById('quizWord').textContent = quizWords[currentIndex].word;
+    document.getElementById('answerInput').value = '';
+    document.getElementById('feedback').textContent = '';
+    document.getElementById('feedback').className = '';
+    document.getElementById('answerInput').focus();
+}
+
+// 답 제출
+function submitAnswer() {
+    const answerInput = document.getElementById('answerInput');
+    const userAnswer = answerInput.value.trim();
+    const correctAnswer = quizWords[currentIndex].meaning;
+    const feedback = document.getElementById('feedback');
+
+    if(userAnswer === '') {
+        alert("뜻을 입력하세요!");
+        return;
+    }
+
+    if(userAnswer === correctAnswer) {
+        correctCount++;
+        feedback.textContent = '정답! 🎉';
+        feedback.className = 'correct';
+    } else {
+        wrongAnswers.push({
+            word: quizWords[currentIndex].word,
+            correct: correctAnswer,
+            user: userAnswer
+        });
+        feedback.textContent = `오답! 정답은: ${correctAnswer}`;
+        feedback.className = 'wrong';
+    }
+
+    currentIndex++;
+    if(currentIndex < quizWords.length) {
+        setTimeout(renderQuiz, 1000);
+    } else {
+        setTimeout(showResult, 1000);
+    }
+}
+
+// 결과 표시
+function showResult() {
+    document.getElementById('quizSection').style.display = 'none';
+    document.getElementById('result').style.display = 'block';
+
+    const scorePercent = Math.round((correctCount / quizWords.length) * 100);
+    document.getElementById('score').textContent = `정답률: ${scorePercent}% (${correctCount} / ${quizWords.length})`;
+
+    const wrongListTable = document.getElementById('wrongList');
+    wrongListTable.innerHTML = '<tr><th>영단어</th><th>정답</th><th>입력한 답</th></tr>';
+    wrongAnswers.forEach(item => {
+        wrongListTable.innerHTML += `<tr><td>${item.word}</td><td>${item.correct}</td><td>${item.user}</td></tr>`;
+    });
+}
+
+// 시험 다시 시작
+function restart() {
+    document.getElementById('result').style.display = 'none';
+    document.querySelector('h1').style.display = 'block';
+    document.getElementById('word').style.display = 'inline-block';
+    document.getElementById('meaning').style.display = 'inline-block';
+    document.getElementById('startQuizBtn').style.display = 'inline-block';
+    document.getElementById('wordList').style.display = 'table';
+    document.querySelector('button[onclick="addWord()"]').style.display = 'inline-block';
+
+    quizWords = [];
+    currentIndex = 0;
+    correctCount = 0;
+    wrongAnswers = [];
+    renderTable();
+}
+</script>
+
+</body>
+</html>
