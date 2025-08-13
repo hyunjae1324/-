@@ -4,13 +4,7 @@
 <meta charset="UTF-8" />
 <title>영단어 시험</title>
 <style>
-    body { 
-        font-family: Arial, sans-serif; 
-        padding: 20px; 
-        max-width: 600px; 
-        margin: auto; 
-        text-align: center;
-    }
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; text-align: center; }
     h1, h2 { color: #333; }
     input, button { padding: 10px; font-size: 16px; margin: 5px; }
     button { cursor: pointer; border: none; background-color: #007bff; color: white; border-radius: 4px; }
@@ -47,7 +41,7 @@
     <div id="quizStatus"></div>
     <div id="quizWord"></div>
     <input type="text" id="answerInput" placeholder="뜻을 입력하세요" />
-    <button onclick="submitAnswer()">제출</button>
+    <button id="submitBtn" onclick="submitAnswer()">제출</button>
     <div id="feedback" style="margin-top:10px; font-weight:bold;"></div>
 </div>
 
@@ -66,6 +60,7 @@ let quizWords = [];
 let currentIndex = 0;
 let correctCount = 0;
 let wrongAnswers = [];
+let answeringAllowed = true;
 
 // 단어 추가
 function addWord() {
@@ -105,13 +100,22 @@ function renderTable() {
     });
 }
 
+// Fisher–Yates 셔플
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
 // 시험 시작
 function startQuiz() {
     if (words.length === 0) {
         alert("단어를 먼저 입력하세요!");
         return;
     }
-    quizWords = [...words].sort(() => Math.random() - 0.5);
+    quizWords = [...words];
+    shuffleArray(quizWords); // 랜덤 섞기
     currentIndex = 0;
     correctCount = 0;
     wrongAnswers = [];
@@ -130,16 +134,20 @@ function startQuiz() {
 
 // 시험 문제 출력
 function renderQuiz() {
+    answeringAllowed = true;
     document.getElementById('quizStatus').textContent = `문제 ${currentIndex + 1} / ${quizWords.length}`;
     document.getElementById('quizWord').textContent = quizWords[currentIndex].word;
     document.getElementById('answerInput').value = '';
     document.getElementById('feedback').textContent = '';
     document.getElementById('feedback').className = '';
+    document.getElementById('answerInput').disabled = false;
+    document.getElementById('submitBtn').disabled = false;
     document.getElementById('answerInput').focus();
 }
 
 // 답 제출
 function submitAnswer() {
+    if (!answeringAllowed) return; // 중복 제출 방지
     const answerInput = document.getElementById('answerInput');
     const userAnswer = answerInput.value.trim();
     const correctAnswer = quizWords[currentIndex].meaning;
@@ -149,6 +157,10 @@ function submitAnswer() {
         alert("뜻을 입력하세요!");
         return;
     }
+
+    answeringAllowed = false; // 더 이상 제출 못하게
+    answerInput.disabled = true;
+    document.getElementById('submitBtn').disabled = true;
 
     if(userAnswer === correctAnswer) {
         correctCount++;
