@@ -69,8 +69,8 @@ function addWord() {
     const word = wordInput.value.trim();
     const meaning = meaningInput.value.trim();
 
-    if(word && meaning) {
-        words.push({word, meaning});
+    if (word && meaning) {
+        words.push({ word, meaning });
         renderTable();
         wordInput.value = '';
         meaningInput.value = '';
@@ -115,7 +115,8 @@ function startQuiz() {
         return;
     }
     quizWords = [...words];
-    shuffleArray(quizWords); // 랜덤 섞기
+    shuffleArray(quizWords); // 무작위 순서
+
     currentIndex = 0;
     correctCount = 0;
     wrongAnswers = [];
@@ -135,34 +136,46 @@ function startQuiz() {
 // 시험 문제 출력
 function renderQuiz() {
     answeringAllowed = true;
+    const submitBtn = document.getElementById('submitBtn');
+    const answerInput = document.getElementById('answerInput');
+
     document.getElementById('quizStatus').textContent = `문제 ${currentIndex + 1} / ${quizWords.length}`;
     document.getElementById('quizWord').textContent = quizWords[currentIndex].word;
-    document.getElementById('answerInput').value = '';
+    answerInput.value = '';
     document.getElementById('feedback').textContent = '';
     document.getElementById('feedback').className = '';
-    document.getElementById('answerInput').disabled = false;
-    document.getElementById('submitBtn').disabled = false;
-    document.getElementById('answerInput').focus();
+
+    // 다시 활성화
+    answerInput.disabled = false;
+    submitBtn.disabled = false;
+    answerInput.focus();
 }
 
 // 답 제출
 function submitAnswer() {
-    if (!answeringAllowed) return; // 중복 제출 방지
+    const submitBtn = document.getElementById('submitBtn');
     const answerInput = document.getElementById('answerInput');
+
+    if (!answeringAllowed) return; // 이미 제출 중이면 무시
+    answeringAllowed = false; // 즉시 막기
+
+    // 버튼, 입력창 바로 잠금
+    submitBtn.disabled = true;
+    answerInput.disabled = true;
+
     const userAnswer = answerInput.value.trim();
     const correctAnswer = quizWords[currentIndex].meaning;
     const feedback = document.getElementById('feedback');
 
-    if(userAnswer === '') {
+    if (userAnswer === '') {
         alert("뜻을 입력하세요!");
+        answeringAllowed = true;
+        submitBtn.disabled = false;
+        answerInput.disabled = false;
         return;
     }
 
-    answeringAllowed = false; // 더 이상 제출 못하게
-    answerInput.disabled = true;
-    document.getElementById('submitBtn').disabled = true;
-
-    if(userAnswer === correctAnswer) {
+    if (userAnswer === correctAnswer) {
         correctCount++;
         feedback.textContent = '정답! 🎉';
         feedback.className = 'correct';
@@ -177,7 +190,7 @@ function submitAnswer() {
     }
 
     currentIndex++;
-    if(currentIndex < quizWords.length) {
+    if (currentIndex < quizWords.length) {
         setTimeout(renderQuiz, 1000);
     } else {
         setTimeout(showResult, 1000);
